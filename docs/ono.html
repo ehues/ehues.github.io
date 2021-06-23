@@ -102,7 +102,7 @@ function requestForPostalCode(postalCode) {
 	oReq.addEventListener("load", reqSucceeded);
 	oReq.addEventListener("error", event => requestFailed(event, postalCode));
 	oReq.addEventListener("abort", event => requestFailed(event, postalCode));
-	oReq.open("GET", "http://represent.opennorth.ca/postcodes/" + postalCode + "/");
+	oReq.open("GET", "https://represent.opennorth.ca/postcodes/" + postalCode + "/");
 	oReq.send();
 }
 
