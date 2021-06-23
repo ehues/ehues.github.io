@@ -1,0 +1,145 @@
+<html>
+<body>
+
+<form id="pc_form">
+	<input type='input' id='pc'></input>
+        <div id="pc_err"></div>
+</form>
+
+<script>
+
+// Generate an HTML node the describes the representative
+function makeRepresentativeNode(name, district, email) {
+  let mpDiv = document.createElement('div');
+
+  let mpSpan = document.createElement('span');
+  mpSpan.innerText = official.name;
+  mpDiv.appendChild(mpSpan);
+
+  let districtSpan = document.createElement('span');
+  districtSpan.innerText = ' (' + official.district_name + ') ';
+  mpDiv.appendChild(districtSpan);
+
+  let a = document.createElement('a');
+  a.innerText = official.email;
+  a.setAttribute('href', 'mailto:' + official.email);
+  mpDiv.appendChild(a);
+
+  return mpDiv;
+}
+
+// In the given `base` HTML node, create a heading, and then 
+// append all of the officials within it
+function appendType(type, officials, headingText, base) {
+  if (type in officials) {
+        let heading = document.createElement('h2');
+        heading.textContent = headingText;
+	base.appendChild(heading);
+
+	for (o of officials[type]) {
+		base.appendChild(o);
+        }
+  }
+}
+
+// Called on a successful response from representatives.opennorth.ca
+// Fetches the elected officials and writes them into the page
+function reqSucceeded() {
+  if (this.status != 200) {
+    console.log("Failed status: %i", this.status);
+    return;
+  }
+
+  let officials = {};
+
+  // Create nice divs describing each of the elected representatives
+  let parsed = JSON.parse(this.response);
+  for (container of ['representatives_centroid', 'representatives_concordance']) {
+    if (!(container in parsed)) {
+      // Some responses don't have both container types
+      continue;
+    }
+    for (official of parsed[container]) {
+      let office = official.elected_office;
+      let mpDiv = makeRepresentativeNode(official.name, official.district_name, official.email);
+      
+      if (office in officials) {
+        officials[office].push(mpDiv);
+      }
+      else {
+        officials[office] = [mpDiv];
+      }
+    }
+  }
+
+  let base = document.createElement('div');
+
+  // Pull out each type of representative and show them nicely
+  appendType('MP', officials, 'Member of Parliament', base); // federal
+
+  appendType('MLA', officials, 'Member of the Legislative Assembly', base); // pei, ns, nb
+  appendType('MHA', officials, 'House of Assembly', base); // nfld
+  appendType('MNA', officials, 'Member of the National Assembly', base); // qc
+  appendType('MPP', officials, 'Member of Provincial Parliament', base); // everyone else
+
+  appendType('Mayor', officials, 'Mayor', base);
+  appendType("Maire d'arrondissement", officials, 'Mayor', base); // qc
+  appendType('Councillor', officials, 'City Councillor', base);
+
+  let result = document.getElementById('reps');
+  result.textContent = ''; // Clear the existing nodes: https://stackoverflow.com/questions/3955229/remove-all-child-elements-of-a-dom-node-in-javascript
+  result.appendChild(base);
+}
+
+// Called when the request for the given postal code can't complete
+function requestFailed(event, postalCode) {
+	setErr("Unable to find " + postalCode);
+}
+
+// Triggers a request to opennorth for the given postal code. 
+function requestForPostalCode(postalCode) {
+	var oReq = new XMLHttpRequest();
+	oReq.addEventListener("load", reqSucceeded);
+	oReq.addEventListener("error", event => requestFailed(event, postalCode));
+	oReq.addEventListener("abort", event => requestFailed(event, postalCode));
+	oReq.open("GET", "http://represent.opennorth.ca/postcodes/" + postalCode + "/");
+	oReq.send();
+}
+
+// Displays an error to the user
+function setErr(text) {
+	let err = document.getElementById('pc_err');
+	err.innerText = text;
+}
+
+// Extracts the postal code from the form and triggers a request to get representatives
+function showPostalCodes(event) {
+	event.preventDefault(); // Don't navigate away
+
+	let postalCode = document.getElementById('pc').value;
+
+	// Validate
+
+	let m = /^\s*([a-z]\d[a-z])\s*(\d[a-z]\d)\s*$/i.exec(postalCode);
+	if (m) {
+		setErr(''); // Nothing has gone wrong yet
+
+		let clean = ("" + m[1] + m[2]).toUpperCase();
+		console.log("clean: %s", clean);
+		requestForPostalCode(clean);
+	} 
+	else {
+		setErr("Postal code must be of the form A1B 2C3");
+	}
+}
+
+let form = document.getElementById('pc_form');
+
+form.addEventListener('submit', showPostalCodes);
+
+</script>
+
+<div id='reps'></div>
+
+</body>
+</html>
