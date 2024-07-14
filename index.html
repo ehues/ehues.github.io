@@ -1,0 +1,62 @@
+<head></head>
+<body>
+
+	<b id="left">lefty</b>
+	<b id="op">right</b>
+	<b id="right">right</b>
+	= <form id="myForm"><input type="text" id="answer"><input type="submit"></form>
+
+	<b id="result"></b>
+
+</body>
+<script>
+
+function getRandomInt(max) {
+  return Math.floor(Math.random() * max);
+}
+
+function makeProblem(){
+
+	
+	if (getRandomInt(2)==0) {
+		document.getElementById("result").innerText =''
+		left = getRandomInt(15)
+		right = getRandomInt(20)
+		answer = left + right
+		document.getElementById("left").innerText = left
+		document.getElementById("right").innerText = right
+		
+		document.getElementById("op").innerText = '+'
+	}   
+	else {
+		document.getElementById("result").innerText =''
+		left = getRandomInt(15)
+		right = getRandomInt(20)
+		answer = left * right
+		document.getElementById("left").innerText = left
+		document.getElementById("right").innerText = right
+	    document.getElementById("op").innerText = '×'
+
+	}
+	document.getElementById("result").focus()
+}
+
+makeProblem()
+
+function checkIfRight(event) {
+	console.log("ran checkIfRight")
+	event.preventDefault();
+	value = document.getElementById('answer').value;
+	if (value == answer) {
+		document.getElementById("result").innerText ='u are correct. '	+ value +' is correct'
+		document.getElementById('myForm').reset()
+		setTimeout(makeProblem, 2000)
+	}
+	else {
+		document.getElementById("result").innerText ='u failed. '	+ value + ' is not correct'
+	}
+
+}
+
+document.getElementById("myForm").addEventListener('submit', checkIfRight)
+</script>
